@@ -1,16 +1,13 @@
 /*
 CentralControl:
-		handle elevator process and request list
-		Referring:
-			CIBSE Guide D: Transportation Systems in Buildings 2015
-		After considering time and resources:
+		handling elevators and managing request list
 	Basic design:
 		1. MAXLEVEL is 100, MINLEVEL is 1.
 		2. Two elevators are elevatorA and elevatorB:
 			-> using the weight to choice which elevator serve the request.
-			-> adding a condition, MAXPASSENGERS, for the elevator's capacity.
+			-> adding a condition, MAXPASSENGERS, for the elevator's capacity. => not implemented yet
 		3. Simply traveling time : MOVINGTIME
-		4. Usage of floor  --> this condition is not be consider this time
+		4. The usage of floor  --> this condition is not be consider this time
 		5. Rush hour/busy floor and Building type --> doesn't consider this time as well.
 */
 
