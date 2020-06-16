@@ -18,6 +18,7 @@
 #define COLORTEXT_DEFAULT 0  // Default color for console 
 #define COLORTEXT_ELEVATOR_MSG 1 // The color setting for massage form Elevators
 #define COLORTEXT_DOOR_MSG 2 //The color setting from the door opening / closing massage.
+#define COLORTEXT_DBG_MSG 3
 
 class Elevator {
 private:
@@ -45,6 +46,9 @@ public:
     void run();
     void move();
     void arrive();
+	//for DEBUG:
+	void ShowAllStatus();
+	//END- for debug
     void setTextColor(int textAttribute);
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 

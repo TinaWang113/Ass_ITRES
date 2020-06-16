@@ -6,8 +6,9 @@
 #include "Elevator.h"
 #include <vector>
 #include <algorithm>
-using namespace std;
 
+using namespace std;
+#define DEBUGMODE false;
 
 /*
 	Initial Elevator and new thread.
@@ -38,10 +39,9 @@ int Elevator::getElevatorCurrentFloor() {
 */
 bool Elevator::addRequest(Person* person) {
     rqt_List.push_back(person);
-
-
     return true;
 }
+
 
 void Elevator::stopElevator() {
     this->runThread = false;
@@ -56,6 +56,7 @@ void Elevator::run() {
     try {
         while (runThread) {
             //only moving when rqt_list is not empty
+            //const std::lock_guard<std::mutex> lock(locker);
             while (!this->rqt_List.empty() || !this->moving_List.empty()) {
                 locker.lock();
                 move();
@@ -65,8 +66,7 @@ void Elevator::run() {
             elevatorStatus = STOP;
         }
     } catch (exception& e) {
-        //std::terminate();
-        cout << e.what() << '\n';
+        std::cout << e.what() << endl;
     }
 }
 
@@ -78,13 +78,14 @@ void Elevator::run() {
 		3. Open door when elevator arrives on the floor in the rqt_List/moving_List. ==> should consider the loading time, but it doesn't including this time.
 			: ideally, it would be a function with delay to more close to reality
 */
+
 void Elevator::move() {
     try {
 
         setTextColor(COLORTEXT_ELEVATOR_MSG);
         std::cout << "Elevator #" << this->elevatorID << " in the floor# " << currentFloor << ". \n";
         setTextColor(COLORTEXT_DEFAULT);
-        for (vector<Person *>::iterator rqt_it = rqt_List.begin(); rqt_it != rqt_List.end();) {
+        for (auto rqt_it = rqt_List.begin(); rqt_it != rqt_List.end(); ++rqt_it) {
             if (currentFloor == (*rqt_it)->in_Floor) {
                 setTextColor(COLORTEXT_DOOR_MSG);
                 std::cout << "Door is open." << endl;
@@ -92,10 +93,11 @@ void Elevator::move() {
                 std::cout << "Door is close." << endl;
                 setTextColor(COLORTEXT_DEFAULT);
                 addMovingList((*rqt_it)->in_Floor, (*rqt_it)->out_Floor);
+                delete((*rqt_it));
                 rqt_it = rqt_List.erase(rqt_it);
             }
             if (rqt_List.empty()) break;
-            rqt_it++;
+            //rqt_it++;
         }
         arrive();
         if (elevatorStatus == UP) {
@@ -111,7 +113,7 @@ void Elevator::move() {
             cout << "Waiting for getting in elevator#" << elevatorID << ": " << rqt_List.size() << endl;
             if (rqt_List.size() != 0) {
                 cout << "waiting floor:";
-                for (int i = 0; i < rqt_List.size(); i++) {
+                for (unsigned int i = 0; i < rqt_List.size(); i++) {
                     cout << "[" << rqt_List[i]->in_Floor << "] ";
                 }
                 cout << "\n";
@@ -119,12 +121,11 @@ void Elevator::move() {
             cout << "Elevator#" << elevatorID << " : waiting for getting off: " << rqt_List.size() << endl;
             if (moving_List.size() != 0) {
                 cout << "get off floor:";
-                for (int i = 0; i < moving_List.size(); i++) {
+                for (unsigned int i = 0; i < moving_List.size(); i++) {
                     cout << "[" << moving_List[i]->out_Floor << "] ";
                 }
                 cout << "\n";
             }
-
         }
 
     } catch (exception& e) {
@@ -144,22 +145,22 @@ bool Elevator::addMovingList(int inFloor, int outFloor) {
 */
 void Elevator::arrive() {
     try {
-        for (vector<Person *>::iterator moving_it = moving_List.begin(); moving_it != moving_List.end(); ) {
+        for (auto moving_it = moving_List.begin(); moving_it != moving_List.end(); ) {
             if ((*moving_it)->out_Floor == currentFloor) {
                 setTextColor(COLORTEXT_ELEVATOR_MSG);
                 std::cout << "Door is open." << endl;
                 std::cout << "[MASSAGE] Elevator #" << elevatorID << ": Passengers get off the elevator in the floor. \n";
                 std::cout << "Door is close." << endl;
                 setTextColor(COLORTEXT_DEFAULT);
+                delete((*moving_it));
                 moving_it = moving_List.erase(moving_it);
-            } else if ((*moving_it)->in_Floor == currentFloor) {
-                if ((*moving_it)->out_Floor > currentFloor) {
-                    setElevatorStatus(UP);
-                    cout << "Elevator #" << elevatorID << " is going up. \n";
-                } else if ((*moving_it)->out_Floor < currentFloor) {
-                    setElevatorStatus(DOWN);
-                    cout << "Elevator #" << elevatorID << " is going down. \n";
-                }
+
+            } else if ((*moving_it)->out_Floor > currentFloor) {
+                setElevatorStatus(UP);
+                cout << "Elevator #" << elevatorID << " is going up. \n";
+            } else if ((*moving_it)->out_Floor < currentFloor) {
+                setElevatorStatus(DOWN);
+                cout << "Elevator #" << elevatorID << " is going down. \n";
             }
 
             //check
@@ -173,6 +174,13 @@ void Elevator::arrive() {
     } catch (exception& e) {
         cout << e.what() << '\n';
     }
+}
+
+void Elevator::ShowAllStatus() {
+    setTextColor(COLORTEXT_DBG_MSG);
+    cout << "[DEBUG] thread_id: " << std::this_thread::get_id() << endl;
+    cout << "[DEBUG]Elevator#" << elevatorID << ", elevatorStatus" << getElevatorStatus() << ", request List: " << rqt_List.size() << ", moving_List: " << moving_List.size() << endl;
+    setTextColor(COLORTEXT_DEFAULT);
 }
 
 /*
@@ -195,6 +203,9 @@ void Elevator::setTextColor(int textAttribute) {
         break;
     case COLORTEXT_DOOR_MSG:
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED);
+        break;
+    case COLORTEXT_DBG_MSG:
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_INTENSITY);
         break;
     default:
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);

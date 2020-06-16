@@ -4,7 +4,7 @@ CentralControl:
 	Basic design:
 		1. MAXLEVEL is 100, MINLEVEL is 1.
 		2. Two elevators are elevatorA and elevatorB:
-			-> using the weight to choice which elevator serve the request.
+			-> using the weight to choice which elevator serves the request.
 			-> adding a condition, MAXPASSENGERS, for the elevator's capacity. => not implemented yet
 		3. Simply traveling time : MOVINGTIME
 		4. The usage of floor  --> this condition is not be consider this time
@@ -93,6 +93,7 @@ The function to deal with elevators who are making requests for high volume visi
 
 */
 #define DEFAULT_WEIGHT 100
+#define DEBUGMODE false
 void CentralControl::elevatorAction() {
     int direction;
     typedef struct select {
@@ -109,7 +110,7 @@ void CentralControl::elevatorAction() {
     //set a variable for calculate how many request left.
     int num = rqt_list.size();
     try {
-        for (vector<Person *>::iterator rqt_it = rqt_list.begin(); rqt_it < rqt_list.end(); rqt_it++) {
+        for (auto rqt_it = rqt_list.begin(); rqt_it < rqt_list.end(); rqt_it++) {
             mgm_ElevatorA.weight = DEFAULT_WEIGHT;
             mgm_ElevatorB.weight = DEFAULT_WEIGHT;
             direction = UpOrDown((*rqt_it)->in_Floor, (*rqt_it)->out_Floor);
@@ -175,6 +176,9 @@ void CentralControl::elevatorAction() {
         elevatorB->locker.unlock();
     } catch (exception& e) {
         cout << e.what() << '\n';
+    } catch (system_error& e) {
+        std::cout << "Caught system_error with code " << e.code()
+                  << " meaning " << e.what() << '\n';
     }
 
 }
@@ -193,8 +197,10 @@ void CentralControl::initCentralControl() {
 void CentralControl::elevatorselected() {
     try {
         while (true) {
+            //randRequest : mimicking person presses floor key
+            int randRequest = rand() % 10 + 5;
+            std::this_thread::sleep_for(std::chrono::seconds(randRequest));
             elevatorLocker.lock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
             while (!rqt_list.empty()) {
                 elevatorAction();
             }
