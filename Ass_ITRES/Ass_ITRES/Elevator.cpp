@@ -56,7 +56,6 @@ void Elevator::run() {
     try {
         while (runThread) {
             //only moving when rqt_list is not empty
-            //const std::lock_guard<std::mutex> lock(locker);
             while (!this->rqt_List.empty() || !this->moving_List.empty()) {
                 locker.lock();
                 move();
@@ -81,7 +80,6 @@ void Elevator::run() {
 
 void Elevator::move() {
     try {
-
         setTextColor(COLORTEXT_ELEVATOR_MSG);
         std::cout << "Elevator #" << this->elevatorID << " in the floor# " << currentFloor << ". \n";
         setTextColor(COLORTEXT_DEFAULT);
@@ -97,7 +95,6 @@ void Elevator::move() {
                 rqt_it = rqt_List.erase(rqt_it);
             }
             if (rqt_List.empty()) break;
-            //rqt_it++;
         }
         arrive();
         if (elevatorStatus == UP) {
